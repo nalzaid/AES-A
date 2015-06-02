@@ -69,28 +69,6 @@ unsigned char GF256multiplication(unsigned char b, unsigned char a) {
 
 
 
-void ARK(unsigned char s[4][4], unsigned char k[4][4])
-{
-	int i, j;
-	for (i = 0; i<4; i++)
-
-		for (j = 0; j<4; j++)
-			s[i][j] ^= k[i][j];
-
-	/*printf("The state content after ARK transformation: \n\n");
-
-
-	for (i = 0; i<4; i++)
-	{
-		for (j = 0; j<4; j++)
-			printf("%0.2X \t", s[i][j]);
-
-		printf("\n");
-	}*/
-
-}
-
-
 
 void SR(unsigned char s[4][4])
 {
@@ -119,16 +97,7 @@ void SR(unsigned char s[4][4])
 	s[3][2] = s[3][1];
 	s[3][1] = temp;
 
-	//printf("The state content after Shift-Rows transformation: \n\n");
-
-
-	//for (i = 0; i<4; i++)
-	//{
-	//	for (j = 0; j<4; j++)
-	//		printf("%0.2X \t", s[i][j]);
-
-	//	printf("\n");
-	//}
+	
 
 }
 
@@ -141,7 +110,7 @@ void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 	int i, j,x;
 	int r, count;
 	unsigned char t;
-	unsigned char temp[4] = { 0x00, 0x00, 0x00, 0x00 };
+	unsigned char temp[4];
 
 	unsigned char rcon[10] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36 }; 
 	count = 0;
@@ -157,15 +126,6 @@ void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 	{
 			for (r = 0; r < 4; r++)
 				temp[r] = res[r][j - 1];
-
-
-			/*printf("The temp content before roatate: \n\n");
-
-
-			for (i = 0; i<4; i++)
-			{
-				for (j = 0; j<4; j++)
-					printf("%0.2X \t", temp[i][j]);*/
 
 
 			
@@ -186,13 +146,9 @@ void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 				temp[i] = S_BOX[temp[i]];
 
 			
-			
-			
-
 
 			//3XOR 
 		
-			
 			
 					res[0][j] = res[0][j - 4] ^ temp[0] ^ rcon[count];
 					
@@ -234,11 +190,6 @@ void MC(unsigned char s[4][4], unsigned char res[4][4])
 
 
 
-	
-
-	
-
-
 }
 
 
@@ -278,32 +229,15 @@ void main()
 
 	keyExp(key,exKey);
 
-	/*printf("The expanded key content: \n\n");
-
-
-
-	for (i = 0; i < 44; i++)
-	{
-		for (j = 0; j < 4; j++)
-			printf("%0.2X  ", exKey[j][i]);
-
-		printf("\n");
-	}*/
 	
 	
 	
-	ARK(state, key);
+	//Add the first round key
+	for (i = 0; i<4; i++)
+		for (j = 0; j<4; j++)
+			state[i][j] ^= key[i][j];
 
-	/*printf("The input state after first add round key content: \n\n");
-
-
-	for (s = 0; s<4; s++)
-	{
-		for (w = 0; w<4; w++)
-			printf("%0.2X \t", state[s][w]);
-
-		printf("\n");
-	}*/
+	
 
 
 	for(f = 0; f<9;f++)
@@ -344,7 +278,9 @@ void main()
 		col = col + 4;
 
 		//Add round key:
-		ARK(state, temp);
+		for (i = 0; i<4; i++)
+			for (j = 0; j<4; j++)
+				state[i][j] ^= temp[i][j];
 
 		
 
@@ -377,7 +313,9 @@ void main()
 	}
 
 
-	ARK(state, temp);
+	for (i = 0; i<4; i++)
+		for (j = 0; j<4; j++)
+			state[i][j] ^= temp[i][j];
 
 	printf("The output state content: \n\n");
 
