@@ -147,7 +147,7 @@ void SB(unsigned char s[4][4])
 void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 {
 
-	int i, j;
+	int i, j,x;
 	int r, count;
 	unsigned char t;
 	unsigned char temp[4][4] = { { 0x00, 0x00, 0x00, 0x00 },
@@ -164,13 +164,11 @@ void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 			res[i][j] = k[i][j];
 
 	// col 4 - col 43
-	for (j = 4; j < 44; j++)
+
+	for (j = 4; j < 44; j=j+4)//each time this loop will fill 4 col at a time, so it will be done 11 times only
 	{
-		if (j % 4 == 0)
-		{
 			for (r = 0; r < 4; r++)
 				temp[r][0] = res[r][j-1];
-
 
 
 			/*printf("The temp content before roatate: \n\n");
@@ -190,15 +188,9 @@ void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 			temp[2][0] = temp[3][0];
 			temp[3][0] = t;
 
-
-			
-
-
 			//subbyte
 			SB(temp);
 
-
-			
 			//3XOR 
 		
 			for (r = 0; r < 4; r++)
@@ -211,18 +203,13 @@ void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 				else
 					res[r][j] = res[r][j - 4] ^ temp[r][0];
 
-		}//end (if j%4==0)
-
-		else
-		{
-		
-			// XOR
-			for (r = 0; r < 4; r++)
-				res[r][j] = res[r][j - 1] ^ res[r][j - 4];
-		}
-
-	
-
+		// the rest col after j 
+			for (x = 1; x <= 3; x++)
+			{
+				for (r = 0; r < 4; r++)
+					res[r][j + x] = res[r][(j+x) - 1] ^ res[r][(j+x)- 4];
+			}
+			
 	}// end for loop
 
 }
