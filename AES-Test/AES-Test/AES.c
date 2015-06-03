@@ -70,38 +70,63 @@ unsigned char GF256multiplication(unsigned char b, unsigned char a) {
 
 
 
-void SR(unsigned char s[4][4])
+/*void SR(unsigned char s[4][4] , int f)
 {
 	int temp;
 
+	if (f == 0)// SR for ENC
+	{
+		//row1 
+		temp = s[1][0];
+		s[1][0] = s[1][1];
+		s[1][1] = s[1][2];
+		s[1][2] = s[1][3];
+		s[1][3] = temp;
 
-	//row1 
-	temp = s[1][0];
-	s[1][0] = s[1][1];
-	s[1][1] = s[1][2];
-	s[1][2] = s[1][3];
-	s[1][3] = temp;
+		//row2
+		temp = s[2][0];
+		s[2][0] = s[2][2];
+		s[2][2] = temp;
+		temp = s[2][1];
+		s[2][1] = s[2][3];
+		s[2][3] = temp;
 
-	//row2
-	temp = s[2][0];
-	s[2][0] = s[2][2];
-	s[2][2] = temp;
-	temp = s[2][1];
-	s[2][1] = s[2][3];
-	s[2][3] = temp;
+		//row 3 
+		temp = s[3][0];
+		s[3][0] = s[3][3];
+		s[3][3] = s[3][2];
+		s[3][2] = s[3][1];
+		s[3][1] = temp;
+	}
 
-	//row 3 
-	temp = s[3][0];
-	s[3][0] = s[3][3];
-	s[3][3] = s[3][2];
-	s[3][2] = s[3][1];
-	s[3][1] = temp;
+	else if (f == 1)//SR for DEC
+	{
+		//row1 
+		temp = s[1][0];
+		s[1][0] = s[1][3];
+		s[1][3] = s[1][2];
+		s[1][2] = s[1][1];
+		s[1][1] = temp;
 
 	
 
-}
+		//row2
+		temp = s[2][0];
+		s[2][0] = s[2][2];
+		s[2][2] = temp;
+		
+		temp = s[2][3];
+		s[2][3] = s[2][1];
+		s[2][1] = temp;
 
-
+		//row 3 
+		temp = s[3][3];
+		s[3][3] = s[3][0];
+		s[3][0] = s[3][1];
+		s[3][1] = s[3][2];
+		s[3][2] = temp;
+	}
+}*/
 
 
 void keyExp(unsigned char k[4][4], unsigned char res[4][44])
@@ -168,37 +193,306 @@ void keyExp(unsigned char k[4][4], unsigned char res[4][44])
 
 }
 
-void MC(unsigned char s[4][4], unsigned char res[4][4])
+void MC(unsigned char s[4][4], unsigned char res[4][4], int f)
 {
 	unsigned int   m[4][4] = { { 0x02, 0x03, 0x01, 0x01 },
 	{ 0x01, 0x02, 0x03, 0x01 },
 	{ 0x01, 0x01, 0x02, 0x03 },
 	{ 0x03, 0x01, 0x01, 0x02 } };
 
+	unsigned int   mDEC[4][4] = { { 0x0E, 0x0B, 0x0D, 0x09 },
+	{ 0x09, 0x0E, 0x0B, 0x0D },
+	{ 0x0D, 0x09, 0x0E, 0x0B },
+	{ 0x0B, 0x0D, 0x09, 0x0E } };
 
+	
 	int c, r, k;
 
 	for (r = 0; r < 4; r++)
 		for (c = 0; c < 4; c++)
 			res[r][c] = 0x00;
 	
+	if (f == 0)
+	{
+		for (c = 0; c < 4; c++)
+			for (r = 0; r < 4; r++)
+				for (k = 0; k < 4; k++)
+					res[r][c] ^= GF256multiplication(s[k][c], m[r][k]);
 
-	for (c = 0; c < 4; c++)
-		for (r = 0; r < 4; r++)
-			for (k = 0; k<4; k++)
-				res[r][c] ^= GF256multiplication(s[k][c], m[r][k]);
+	}
 
+	else if (f == 1)
+	{
+		
+		for (c = 0; c < 4; c++)
+			for (r = 0; r < 4; r++)
+				for (k = 0; k < 4; k++)
+					res[r][c] ^= GF256multiplication(s[k][c], mDEC[r][k]);
 
+	}
 
 }
 
+void AES_ENC(unsigned char state[4][4], unsigned char key[4][44], int col)
+{
+	int i, j,s,w ,r, f;
+	char tem;
+	unsigned char temp[4][4];
+
+	unsigned char res[4][4];
+
+	//Add the first round key
+	for (i = 0; i < 4; i++)
+		for (j = 0; j < 4; j++)
+			state[i][j] ^= key[i][j];
+
+
+	for (f = 0; f<9; f++)
+	{
+		//Sub-Bytes
+		for (i = 0; i < 4; i++)
+			for (j = 0; j < 4; j++)
+				state[i][j] = S_BOX[state[i][j]];
+
+		//Shift Rows:
+	
+		//row1 
+		tem = state[1][0];
+		state[1][0] = state[1][1];
+		state[1][1] = state[1][2];
+		state[1][2] = state[1][3];
+		state[1][3] = tem;
+
+		//row2
+		tem = state[2][0];
+		state[2][0] = state[2][2];
+		state[2][2] = tem;
+		tem = state[2][1];
+		state[2][1] = state[2][3];
+		state[2][3] = tem;
+
+		//row 3 
+		tem = state[3][0];
+		state[3][0] = state[3][3];
+		state[3][3] = state[3][2];
+		state[3][2] = state[3][1];
+		state[3][1] = tem;
+
+		//Mix-Columns
+		MC(state, res, 0);
+
+		for (s = 0; s < 4; s++)
+			for (w = 0; w < 4; w++)
+				state[s][w] = res[s][w];
+
+		//get the round key:
+		for (r = 0; r < 4; r++)
+		{
+			for (j = 0; j < 4; j++)
+			{
+				temp[r][j] = key[r][col];
+				col++;
+
+			}
+			col = col - 4;
+		}
+		col = col + 4;
+		
+		//Add round key:
+		for (i = 0; i<4; i++)
+			for (j = 0; j<4; j++)
+				state[i][j] ^= temp[i][j];
+
+	}
+
+
+	// -------------------------
+	//----- Last Round ---------
+	//--------------------------
+
+	for (i = 0; i < 4; i++)
+		for (j = 0; j < 4; j++)
+			state[i][j] = S_BOX[state[i][j]];
+
+
+	//Shift Rows:
+	 
+	//row1 
+	tem = state[1][0];
+	state[1][0] = state[1][1];
+	state[1][1] = state[1][2];
+	state[1][2] = state[1][3];
+	state[1][3] = tem;
+
+	//row2
+	tem = state[2][0];
+	state[2][0] = state[2][2];
+	state[2][2] = tem;
+	tem = state[2][1];
+	state[2][1] = state[2][3];
+	state[2][3] = tem;
+
+	//row 3 
+	tem = state[3][0];
+	state[3][0] = state[3][3];
+	state[3][3] = state[3][2];
+	state[3][2] = state[3][1];
+	state[3][1] = tem;
+
+
+
+	// get the last round key:
+	for (r = 0; r < 4; r++)
+	{
+		for (j = 0; j < 4; j++)
+		{
+			temp[r][j] = key[r][col];
+			col++;
+
+		}
+		col = col - 4;
+	}
+
+
+	for (i = 0; i<4; i++)
+		for (j = 0; j<4; j++)
+			state[i][j] ^= temp[i][j];
+
+}
+
+void AES_DEC(unsigned char state[4][4], unsigned char key[4][44], int col)
+{
+	int i, j,f;
+	char tem;
+	unsigned char temp[4][4];
+
+	unsigned char res[4][4];
+
+	//get the round key:
+	for (i = 0; i < 4;i++)
+	{
+		for (j = 0; j < 4; j++)
+		{
+			temp[i][j] = key[i][col];
+			col++;
+
+		}
+		col = col - 4;
+	}
+	col = col - 4;
+
+
+	//Add round key first time with the chiper text
+	for (i = 0; i<4; i++)
+		for (j = 0; j<4; j++)
+			state[i][j] ^= temp[i][j];
+
+
+	for (f = 9; f > 0; f--)
+	{
+		//InvSR
+		//row1 
+		tem = state[1][0];
+		state[1][0] = state[1][3];
+		state[1][3] = state[1][2];
+		state[1][2] = state[1][1];
+		state[1][1] = tem;
+
+
+
+		//row2
+		tem = state[2][0];
+		state[2][0] = state[2][2];
+		state[2][2] = tem;
+
+		tem = state[2][3];
+		state[2][3] = state[2][1];
+		state[2][1] = tem;
+
+		//row 3 
+		tem = state[3][3];
+		state[3][3] = state[3][0];
+		state[3][0] = state[3][1];
+		state[3][1] = state[3][2];
+		state[3][2] = tem;
+
+
+		//InvSB
+		for (i = 0; i < 4; i++)
+			for (j = 0; j < 4; j++)
+				state[i][j] = INV_S_BOX[state[i][j]];
+
+		//get round key
+		for (i = 0; i < 4; i++)
+		{
+			for (j = 0; j < 4; j++)
+			{
+				temp[i][j] = key[i][col];
+				col++;
+
+			}
+			col = col - 4;
+		}
+		col = col - 4;
+
+		//ARK
+		for (i = 0; i<4; i++)
+			for (j = 0; j<4; j++)
+				state[i][j] ^= temp[i][j];
+
+		//MC
+		MC(state, res, 1);
+
+
+		for (i = 0; i < 4; i++)
+			for (j = 0; j < 4; j++)
+				state[i][j] = res[i][j];
+	}
+
+	// Last round
+
+	//InvSR
+	//row1 
+	tem = state[1][0];
+	state[1][0] = state[1][3];
+	state[1][3] = state[1][2];
+	state[1][2] = state[1][1];
+	state[1][1] = tem;
+
+
+
+	//row2
+	tem = state[2][0];
+	state[2][0] = state[2][2];
+	state[2][2] = tem;
+
+	tem = state[2][3];
+	state[2][3] = state[2][1];
+	state[2][1] = tem;
+
+	//row 3 
+	tem = state[3][3];
+	state[3][3] = state[3][0];
+	state[3][0] = state[3][1];
+	state[3][1] = state[3][2];
+	state[3][2] = tem;
+
+
+	//InvSB
+	for (i = 0; i < 4; i++)
+		for (j = 0; j < 4; j++)
+			state[i][j] = INV_S_BOX[state[i][j]];
+
+	//ARK
+	for (i = 0; i<4; i++)
+		for (j = 0; j<4; j++)
+			state[i][j] = state[i][j] ^ key[i][j];
+}
 
 
 void main()
 {
-	int i, j, r, f,s,w;
-	int col = 4;
-
+	int i, j; 
 	unsigned char state[4][4] = { { 0x32, 0x88, 0x31, 0xE0 },
 	{ 0x43, 0x5A, 0x31, 0x37 },
 	{ 0xF6, 0x30, 0x98, 0x07 },
@@ -208,10 +502,6 @@ void main()
 	{ 0x7E, 0xAE, 0xF7, 0xCF },
 	{ 0x15, 0xD2, 0x15, 0x4F },
 	{ 0x16, 0xA6, 0x88, 0x3C } };
-
-	unsigned char temp[4][4];
-
-	unsigned char res[4][4];
 
 	unsigned char exKey[4][44];
 
@@ -228,96 +518,10 @@ void main()
 	}
 
 	keyExp(key,exKey);
-
 	
-	
-	
-	//Add the first round key
-	for (i = 0; i<4; i++)
-		for (j = 0; j<4; j++)
-			state[i][j] ^= key[i][j];
+    AES_ENC(state, exKey,4);
 
-	
-
-
-	for(f = 0; f<9;f++)
-	{
-		
-		//Sub-Bytes
-		for (i = 0; i < 4; i++)
-			for (j = 0; j < 4; j++)
-				state[i][j] = S_BOX[state[i][j]];
-	  
-
-	   
-		//Shift Rows:
-		SR(state);
-	   
-
-
-	   
-		//Mix-Columns
-	    MC(state,res);
-		
-		for (s = 0; s < 4; s++)
-			for (w = 0; w < 4; w++)
-				state[s][w] = res[s][w];
-
-		
-	//get the round key:
-		for (r = 0; r < 4; r++)
-		{
-			for (j = 0; j < 4; j++)
-			{
-				temp[r][j] = exKey[r][col];
-				col++;
-
-			}
-			col = col - 4;
-		}
-		col = col + 4;
-
-		//Add round key:
-		for (i = 0; i<4; i++)
-			for (j = 0; j<4; j++)
-				state[i][j] ^= temp[i][j];
-
-		
-
-	}
-
-
-	// -------------------------
-	//----- Last Round ---------
-	//--------------------------
-
-
-	for (i = 0; i < 4; i++)
-		for (j = 0; j < 4; j++)
-			state[i][j] = S_BOX[state[i][j]];
-	
-
-	SR(state);
-	
-
-	// get the last round key:
-	for (r = 0; r < 4; r++)
-	{
-		for (j = 0; j < 4; j++)
-		{
-			temp[r][j] = exKey[r][col];
-			col++;
-
-		}
-		col = col - 4;
-	}
-
-
-	for (i = 0; i<4; i++)
-		for (j = 0; j<4; j++)
-			state[i][j] ^= temp[i][j];
-
-	printf("The output state content: \n\n");
+	printf("The chiphertext state content: \n\n");
 
 
 	for (i = 0; i<4; i++)
@@ -328,6 +532,18 @@ void main()
 		printf("\n");
 	}
 
+	AES_DEC(state, exKey, 40);
+	
+	printf("The plaintext state content: \n\n");
+
+
+	for (i = 0; i<4; i++)
+	{
+		for (j = 0; j<4; j++)
+			printf("%0.2X \t", state[i][j]);
+
+		printf("\n");
+	}
 
 	while (1)
 		if (_kbhit())
