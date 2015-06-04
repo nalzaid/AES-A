@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <conio.h>
+#include <windows.h>
+
 
 typedef unsigned char		BYTE;
 BYTE S_BOX[256] =
@@ -235,7 +237,7 @@ void MC(unsigned char s[4][4], unsigned char res[4][4], int f)
 
 void AES_ENC(unsigned char state[4][4], unsigned char key[4][44], int col)
 {
-	int i, j,s,w ,r, f;
+	int i, j,s,w ,r, f;// s,w,r 
 	char tem;
 	unsigned char temp[4][4];
 
@@ -492,7 +494,10 @@ void AES_DEC(unsigned char state[4][4], unsigned char key[4][44], int col)
 
 void main()
 {
-	int i, j; 
+	int i, j, t; 
+	LARGE_INTEGER FREQUENCY;									// Ticks per Second
+	LARGE_INTEGER START_TIME, END_TIME;						// Start and End Time Counter
+	double ELAPSED_TIME;
 	unsigned char state[4][4] = { { 0x32, 0x88, 0x31, 0xE0 },
 	{ 0x43, 0x5A, 0x31, 0x37 },
 	{ 0xF6, 0x30, 0x98, 0x07 },
@@ -518,8 +523,21 @@ void main()
 	}
 
 	keyExp(key,exKey);
+
+	//** Timing Measurment 1 / 2 **//
+	QueryPerformanceFrequency(&FREQUENCY);
+	QueryPerformanceCounter(&START_TIME);						// Start Timer
+	for (t = 0; t < 1000; t++)
+	{
+		AES_ENC(state, exKey, 4);
+	}
+	QueryPerformanceCounter(&END_TIME);						// End Timer
+	ELAPSED_TIME = (END_TIME.QuadPart - START_TIME.QuadPart) * 1000.0 / FREQUENCY.QuadPart;
 	
-    AES_ENC(state, exKey,4);
+	
+	ELAPSED_TIME = ELAPSED_TIME / 1000; // calculate the average time
+
+	printf("\n%s  %lf %s", "Time :", ELAPSED_TIME, "ms \n");
 
 	printf("The chiphertext state content: \n\n");
 
@@ -531,6 +549,8 @@ void main()
 
 		printf("\n");
 	}
+
+	
 
 	AES_DEC(state, exKey, 40);
 	
